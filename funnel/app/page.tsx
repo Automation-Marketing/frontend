@@ -48,7 +48,7 @@ export default function HomePage() {
     }, 3000);
 
     try {
-      const res = await fetch("http://localhost:8001/onboard", {
+      const res = await fetch("http://localhost:8000/brand/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

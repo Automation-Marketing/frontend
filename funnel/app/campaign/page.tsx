@@ -88,7 +88,7 @@ function CampaignPageInner() {
         setResult(null);
 
         try {
-            const res = await fetch("http://localhost:8001/create", {
+            const res = await fetch("http://localhost:8000/campaign/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
