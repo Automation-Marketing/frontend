@@ -1,9 +1,39 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 const TONES = ["Professional", "Casual", "Witty", "Inspirational", "Bold"];
+
+const TEMPLATE_TYPES = [
+    {
+        id: "educational",
+        label: "Educational",
+        icon: "📚",
+        desc: "Tips & checklists",
+        color: "rgba(16, 185, 129, 0.2)",
+        border: "rgba(16, 185, 129, 0.4)",
+        textColor: "#6ee7b7",
+    },
+    {
+        id: "problem_solution",
+        label: "Problem–Solution",
+        icon: "⚡",
+        desc: "Pain → Gain narrative",
+        color: "rgba(245, 158, 11, 0.2)",
+        border: "rgba(245, 158, 11, 0.4)",
+        textColor: "#fcd34d",
+    },
+    {
+        id: "trust_story",
+        label: "Trust Story",
+        icon: "🤝",
+        desc: "Customer proof",
+        color: "rgba(124, 58, 237, 0.2)",
+        border: "rgba(124, 58, 237, 0.4)",
+        textColor: "#c4b5fd",
+    },
+];
 
 const CONTENT_TYPES = [
     { id: "image", label: "Image Post", icon: "🖼️", desc: "Caption + visual direction" },
@@ -29,22 +59,18 @@ type CarouselContent = {
     cta_slide: { title: string; body: string };
 };
 
-type VideoBodySection = {
-    section: string;
-    script: string;
-    visual_note: string;
-};
 
 type VideoScript = {
-    duration: string;
-    hook: { text: string; visual_note: string };
-    body: VideoBodySection[];
-    cta: { text: string; visual_note: string };
+    hook: string;
+    body: string;
+    cta: string;
     caption: string;
 };
 
 type GeneratedContent = {
-    retrieved_posts?: string[];
+    template_type?: string;
+    tags?: string[];
+    canonical_post?: string;
     image?: ImageContent;
     carousel?: CarouselContent;
     video_script?: VideoScript;
@@ -62,6 +88,7 @@ function CampaignPageInner() {
         tone: "Professional",
         description: "",
         content_types: [] as string[],
+        template_type: "educational",
     });
 
     const [loading, setLoading] = useState(false);
@@ -88,17 +115,24 @@ function CampaignPageInner() {
         setResult(null);
 
         try {
+            // Llama3 on CPU can take 5-10 minutes — give it time
+            const controller = new AbortController();
+            const fetchTimeout = setTimeout(() => controller.abort(), 10 * 60 * 1000); // 10 min
+
             const res = await fetch("http://localhost:8000/campaign/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                signal: controller.signal,
                 body: JSON.stringify({
                     brand_id: parseInt(brandId || "0"),
                     icp: form.icp,
                     tone: form.tone,
                     description: form.description,
                     content_types: form.content_types,
+                    template_type: form.template_type,
                 }),
             });
+            clearTimeout(fetchTimeout);
 
             const data = await res.json();
 
@@ -108,8 +142,14 @@ function CampaignPageInner() {
                 return;
             }
 
-            setResult(data.generated_content);
-            setActiveTab(form.content_types[0]);
+            // Backend now returns generated_content with the full RAG output
+            const content = data.generated_content || data;
+            setResult(content);
+            // Set active tab to first selected content type that was generated
+            const firstAvailableTab = form.content_types.find(
+                (ct) => content[ct as keyof GeneratedContent]
+            );
+            setActiveTab(firstAvailableTab || form.content_types[0]);
         } catch {
             setError("Could not connect to backend. Make sure the server is running.");
         } finally {
@@ -195,6 +235,37 @@ function CampaignPageInner() {
                                 />
                             </div>
 
+                            {/* Template Type */}
+                            <div style={styles.fieldGroup}>
+                                <label className="field-label">Content Strategy</label>
+                                <div style={styles.templateGrid}>
+                                    {TEMPLATE_TYPES.map((tpl) => (
+                                        <button
+                                            key={tpl.id}
+                                            type="button"
+                                            onClick={() => setForm({ ...form, template_type: tpl.id })}
+                                            style={{
+                                                ...styles.templateBtn,
+                                                ...(form.template_type === tpl.id
+                                                    ? {
+                                                        background: tpl.color,
+                                                        border: `1px solid ${tpl.border}`,
+                                                        color: tpl.textColor,
+                                                    }
+                                                    : {}),
+                                            }}
+                                        >
+                                            <span style={{ fontSize: "22px" }}>{tpl.icon}</span>
+                                            <span style={{ fontWeight: 600, fontSize: "12px" }}>{tpl.label}</span>
+                                            <span style={{ fontSize: "11px", opacity: 0.7 }}>{tpl.desc}</span>
+                                            {form.template_type === tpl.id && (
+                                                <div style={{ ...styles.checkmark, background: tpl.border.replace("0.4", "0.9") }}>✓</div>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
                             {/* Content Types */}
                             <div style={styles.fieldGroup}>
                                 <label className="field-label">Content Types</label>
@@ -271,6 +342,36 @@ function CampaignPageInner() {
 
                         {result && (
                             <div className="animate-fade-in">
+                                {/* Template type badge */}
+                                {result.template_type && (
+                                    <div style={styles.templateBadge}>
+                                        {result.template_type === "educational" && "📚"}
+                                        {result.template_type === "problem_solution" && "⚡"}
+                                        {result.template_type === "trust_story" && "🤝"}
+                                        <span style={{ marginLeft: "6px", textTransform: "capitalize" }}>
+                                            {result.template_type.replace("_", "–")}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* Canonical post */}
+                                {result.canonical_post && (
+                                    <ResultCard icon="✍️" title="Canonical Post">
+                                        <p style={styles.captionText}>{result.canonical_post}</p>
+                                    </ResultCard>
+                                )}
+
+                                {/* Auto-tags */}
+                                {result.tags && result.tags.length > 0 && (
+                                    <ResultCard icon="🏷️" title="Auto-Tags">
+                                        <div style={styles.hashtagGrid}>
+                                            {result.tags.map((tag, i) => (
+                                                <span key={i} style={styles.hashtag}>#{tag}</span>
+                                            ))}
+                                        </div>
+                                    </ResultCard>
+                                )}
+
                                 {/* Tabs */}
                                 <div style={styles.tabs}>
                                     {CONTENT_TYPES.filter((ct) => result[ct.id as keyof GeneratedContent]).map((ct) => (
@@ -379,29 +480,16 @@ function CarouselResult({ data }: { data: CarouselContent }) {
 function VideoScriptResult({ data }: { data: VideoScript }) {
     return (
         <div style={styles.resultContainer}>
-            <div style={styles.durationBadge}>⏱ {data.duration}</div>
-
             <ResultCard icon="🎣" title="Hook (0–3 seconds)">
-                <p style={styles.captionText}>{data.hook.text}</p>
-                <div style={styles.visualNote}>
-                    <span style={styles.visualNoteLabel}>📷 Visual:</span> {data.hook.visual_note}
-                </div>
+                <p style={styles.captionText}>{data.hook}</p>
             </ResultCard>
 
-            {data.body.map((section, i) => (
-                <ResultCard key={i} icon="▶️" title={section.section}>
-                    <p style={styles.bodyText}>{section.script}</p>
-                    <div style={styles.visualNote}>
-                        <span style={styles.visualNoteLabel}>📷 Visual:</span> {section.visual_note}
-                    </div>
-                </ResultCard>
-            ))}
+            <ResultCard icon="▶️" title="Main Script">
+                <p style={styles.bodyText}>{data.body}</p>
+            </ResultCard>
 
             <ResultCard icon="📣" title="Call to Action">
-                <p style={styles.captionText}>{data.cta.text}</p>
-                <div style={styles.visualNote}>
-                    <span style={styles.visualNoteLabel}>📷 Visual:</span> {data.cta.visual_note}
-                </div>
+                <p style={styles.captionText}>{data.cta}</p>
             </ResultCard>
 
             {data.caption && (
@@ -539,6 +627,27 @@ const styles: Record<string, React.CSSProperties> = {
         background: "rgba(124, 58, 237, 0.2)",
         border: "1px solid rgba(124, 58, 237, 0.4)",
         color: "#c4b5fd",
+    },
+    templateGrid: {
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gap: "10px",
+        marginTop: "8px",
+    },
+    templateBtn: {
+        display: "flex",
+        flexDirection: "column" as const,
+        alignItems: "center",
+        gap: "5px",
+        padding: "14px 8px",
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: "12px",
+        color: "#64748b",
+        cursor: "pointer",
+        transition: "all 0.2s",
+        position: "relative" as const,
+        textAlign: "center" as const,
     },
     contentTypeGrid: {
         display: "grid",
@@ -783,6 +892,20 @@ const styles: Record<string, React.CSSProperties> = {
     visualNoteLabel: {
         fontWeight: 600,
         color: "#475569",
+    },
+    templateBadge: {
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "6px 14px",
+        background: "rgba(124, 58, 237, 0.1)",
+        border: "1px solid rgba(124, 58, 237, 0.25)",
+        borderRadius: "100px",
+        fontSize: "12px",
+        color: "#c4b5fd",
+        fontWeight: 600,
+        marginBottom: "16px",
+        letterSpacing: "0.04em",
+        textTransform: "capitalize" as const,
     },
 };
 
