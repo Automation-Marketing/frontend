@@ -99,6 +99,7 @@ function CampaignPageInner() {
     const [error, setError] = useState("");
     const [result, setResult] = useState<GeneratedContent | null>(null);
     const [activeTab, setActiveTab] = useState<string>("");
+    const [publishing, setPublishing] = useState(false);
 
     const toggleContentType = (id: string) => {
         setForm((prev) => ({
@@ -158,6 +159,51 @@ function CampaignPageInner() {
             setError("Could not connect to backend. Make sure the server is running.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handlePublish = async () => {
+        if (!result || !activeTab) return;
+        setPublishing(true);
+        try {
+            let contentType = activeTab;
+            if (contentType === "image") contentType = "canonical";
+
+            // Format full image URLs if present
+            const payloadData = JSON.parse(JSON.stringify(result));
+            if (payloadData.image_url && !payloadData.image_url.startsWith("http")) {
+                payloadData.image_url = `${BACKEND_URL}${payloadData.image_url}`;
+            }
+            if (payloadData.carousel && payloadData.carousel.slides) {
+                payloadData.carousel.slides.forEach((s: any) => {
+                    if (s.image_url && !s.image_url.startsWith("http")) s.image_url = `${BACKEND_URL}${s.image_url}`;
+                });
+                if (payloadData.carousel.cta_slide && payloadData.carousel.cta_slide.image_url) {
+                    if (!payloadData.carousel.cta_slide.image_url.startsWith("http")) {
+                        payloadData.carousel.cta_slide.image_url = `${BACKEND_URL}${payloadData.carousel.cta_slide.image_url}`;
+                    }
+                }
+            }
+
+            const res = await fetch("http://localhost:8000/publish/telegram", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    content_type: contentType,
+                    data: payloadData,
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("Successfully published to Telegram! 🚀");
+            } else {
+                alert("Failed to publish: " + (data.detail || data.error || "Unknown error"));
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Failed to connect to backend for publishing.");
+        } finally {
+            setPublishing(false);
         }
     };
 
@@ -399,6 +445,28 @@ function CampaignPageInner() {
                                             {ct.icon} {ct.label}
                                         </button>
                                     ))}
+                                </div>
+
+                                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "20px" }}>
+                                    <button
+                                        onClick={handlePublish}
+                                        disabled={publishing}
+                                        style={{
+                                            ...styles.submitBtn,
+                                            width: "auto",
+                                            padding: "10px 20px",
+                                            display: "flex",
+                                            gap: "8px",
+                                            alignItems: "center"
+                                        }}
+                                        className="btn-primary"
+                                    >
+                                        {publishing ? (
+                                            <><div className="spinner" style={{ width: "16px", height: "16px", borderWidth: "2px" }} /> Publishing...</>
+                                        ) : (
+                                            <>🚀 Publish to Telegram</>
+                                        )}
+                                    </button>
                                 </div>
 
                                 {/* Image Tab */}
