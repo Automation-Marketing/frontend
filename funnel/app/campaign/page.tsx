@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 const TONES = ["Professional", "Casual", "Witty", "Inspirational", "Bold"];
+const BACKEND_URL = "http://localhost:8000";
 
 const TEMPLATE_TYPES = [
     {
@@ -36,27 +37,29 @@ const TEMPLATE_TYPES = [
 ];
 
 const CONTENT_TYPES = [
-    { id: "image", label: "Image Post", icon: "🖼️", desc: "Caption + visual direction" },
-    { id: "carousel", label: "Carousel", icon: "🎠", desc: "5-slide story format" },
-    { id: "video_script", label: "Video Script", icon: "🎬", desc: "Hook, body & CTA" },
+    { id: "image", label: "Canonical Post", icon: "🗒️", desc: "Caption or Tweet" },
+    { id: "carousel", label: "Carousel", icon: "🖼️", desc: "5-slide story format with images" },
+    { id: "video_script", label: "Video Script", icon: "🎞️", desc: "Hook, body & CTA" },
 ];
 
 type ImageContent = {
     caption: string;
     visual_description: string;
     hashtags: string[];
+    image_url?: string;
 };
 
 type CarouselSlide = {
     slide_number: number;
     title: string;
     body: string;
+    image_url?: string;
 };
 
 type CarouselContent = {
     title: string;
     slides: CarouselSlide[];
-    cta_slide: { title: string; body: string };
+    cta_slide: { title: string; body: string; image_url?: string };
 };
 
 
@@ -74,6 +77,7 @@ type GeneratedContent = {
     image?: ImageContent;
     carousel?: CarouselContent;
     video_script?: VideoScript;
+    image_url?: string; // Root level image for canonical post
 };
 
 function CampaignPageInner() {
@@ -357,6 +361,15 @@ function CampaignPageInner() {
                                 {/* Canonical post */}
                                 {result.canonical_post && (
                                     <ResultCard icon="✍️" title="Canonical Post">
+                                        {result.image_url && (
+                                            <div style={styles.imagePreviewContainer}>
+                                                <img
+                                                    src={`${BACKEND_URL}${result.image_url}`}
+                                                    alt="AI Generated"
+                                                    style={styles.imagePreview}
+                                                />
+                                            </div>
+                                        )}
                                         <p style={styles.captionText}>{result.canonical_post}</p>
                                     </ResultCard>
                                 )}
@@ -465,6 +478,17 @@ function CarouselResult({ data }: { data: CarouselContent }) {
                     <div style={styles.slideNumber}>
                         {activeSlide === allSlides.length - 1 ? "CTA Slide" : `Slide ${activeSlide + 1}`}
                     </div>
+
+                    {allSlides[activeSlide].image_url && (
+                        <div style={styles.slideImageContainer}>
+                            <img
+                                src={`${BACKEND_URL}${allSlides[activeSlide].image_url}`}
+                                alt={`Slide ${activeSlide + 1}`}
+                                style={styles.slideImage}
+                            />
+                        </div>
+                    )}
+
                     <h3 style={styles.slideTitle}>{allSlides[activeSlide].title}</h3>
                     <p style={styles.bodyText}>{allSlides[activeSlide].body}</p>
                 </div>
@@ -906,6 +930,32 @@ const styles: Record<string, React.CSSProperties> = {
         marginBottom: "16px",
         letterSpacing: "0.04em",
         textTransform: "capitalize" as const,
+    },
+    imagePreviewContainer: {
+        width: "100%",
+        borderRadius: "12px",
+        overflow: "hidden",
+        marginBottom: "16px",
+        background: "rgba(0,0,0,0.2)",
+        aspectRatio: "1 / 1",
+    },
+    imagePreview: {
+        width: "100%",
+        height: "100%",
+        objectFit: "cover" as const,
+    },
+    slideImageContainer: {
+        width: "100%",
+        borderRadius: "12px",
+        overflow: "hidden",
+        marginBottom: "16px",
+        background: "rgba(0,0,0,0.2)",
+        aspectRatio: "16 / 9",
+    },
+    slideImage: {
+        width: "100%",
+        height: "100%",
+        objectFit: "cover" as const,
     },
 };
 
