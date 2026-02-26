@@ -16,7 +16,7 @@ export default function HomePage() {
   const [form, setForm] = useState({
     company_name: "",
     instagram_handle: "",
-    linkedin_url: "",
+    linkedin_handle: "",
     twitter_handle: "",
   });
 
@@ -165,18 +165,22 @@ export default function HomePage() {
               </div>
 
               <div style={styles.formGroup}>
-                <label className="field-label" htmlFor="linkedin_url">
+                <label className="field-label" htmlFor="linkedin_handle">
                   <span style={styles.platformIcon}>💼</span> LinkedIn Company URL
                 </label>
-                <input
-                  id="linkedin_url"
-                  name="linkedin_url"
-                  type="url"
-                  className="input-field"
-                  placeholder="https://www.linkedin.com/company/your-company/"
-                  value={form.linkedin_url}
-                  onChange={handleChange}
-                />
+                <div style={styles.inputWrapper}>
+                  <span style={styles.inputPrefix}>@</span>
+                  <input
+                    id="linkedin_handle"
+                    name="linkedin_handle"
+                    type="text"
+                    className="input-field"
+                    style={{ paddingLeft: "32px" }}
+                    placeholder="username"
+                    value={form.linkedin_handle}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
 
               {error && <p style={styles.error}>{error}</p>}

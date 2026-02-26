@@ -147,17 +147,11 @@ function CampaignPageInner() {
                 return;
             }
 
-            // Backend now returns generated_content with the full RAG output
-            const content = data.generated_content || data;
-            setResult(content);
-            // Set active tab to first selected content type that was generated
-            const firstAvailableTab = form.content_types.find(
-                (ct) => content[ct as keyof GeneratedContent]
-            );
-            setActiveTab(firstAvailableTab || form.content_types[0]);
+            // Successfully generated — redirect to calendar view
+            router.push(`/campaign/calendar?id=${data.campaign_id}`);
+
         } catch {
             setError("Could not connect to backend. Make sure the server is running.");
-        } finally {
             setLoading(false);
         }
     };
