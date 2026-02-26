@@ -78,6 +78,7 @@ type GeneratedContent = {
     carousel?: CarouselContent;
     video_script?: VideoScript;
     image_url?: string; // Root level image for canonical post
+    ai_brain?: any;
 };
 
 function CampaignPageInner() {
@@ -88,6 +89,7 @@ function CampaignPageInner() {
     const companyName = searchParams.get("company") || "Your Brand";
 
     const [form, setForm] = useState({
+        product_service: "",
         icp: "",
         tone: "Professional",
         description: "",
@@ -112,6 +114,7 @@ function CampaignPageInner() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!form.product_service.trim()) { setError("Please specify the product or service being launched."); return; }
         if (!form.icp.trim()) { setError("Please describe your target audience."); return; }
         if (!form.description.trim()) { setError("Please add a campaign description."); return; }
         if (form.content_types.length === 0) { setError("Select at least one content type."); return; }
@@ -124,12 +127,13 @@ function CampaignPageInner() {
             const controller = new AbortController();
             const fetchTimeout = setTimeout(() => controller.abort(), 10 * 60 * 1000); // 10 min
 
-            const res = await fetch("http://localhost:8000/campaign/create", {
+            const res = await fetch(`${BACKEND_URL}/campaign/create`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 signal: controller.signal,
                 body: JSON.stringify({
                     brand_id: parseInt(brandId || "0"),
+                    product_service: form.product_service,
                     icp: form.icp,
                     tone: form.tone,
                     description: form.description,
@@ -147,9 +151,15 @@ function CampaignPageInner() {
                 return;
             }
 
-            // Successfully generated — redirect to calendar view
-            router.push(`/campaign/calendar?id=${data.campaign_id}`);
-
+            // Backend now returns generated_content with the full RAG output
+            const content = data.generated_content || data;
+            // Merge ai_brain from top-level response into result
+            if (data.ai_brain) {
+                content.ai_brain = data.ai_brain;
+            }
+            setResult(content);
+            // Set active tab to AI Brain by default, or first generated content
+            setActiveTab(data.ai_brain ? "ai_brain" : (form.content_types[0] || ""));
         } catch {
             setError("Could not connect to backend. Make sure the server is running.");
             setLoading(false);
@@ -179,7 +189,7 @@ function CampaignPageInner() {
                 }
             }
 
-            const res = await fetch("http://localhost:8000/publish/telegram", {
+            const res = await fetch(`${BACKEND_URL}/publish/telegram`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -230,6 +240,20 @@ function CampaignPageInner() {
                         </div>
 
                         <form onSubmit={handleSubmit} style={styles.form}>
+                            {/* Product/Service */}
+                            <div style={styles.fieldGroup}>
+                                <label className="field-label" htmlFor="product_service">
+                                    Product / Service
+                                </label>
+                                <input
+                                    id="product_service"
+                                    className="input-field"
+                                    placeholder="e.g. AI-powered CRM feature launch"
+                                    value={form.product_service}
+                                    onChange={(e) => setForm({ ...form, product_service: e.target.value })}
+                                />
+                            </div>
+
                             {/* ICP */}
                             <div style={styles.fieldGroup}>
                                 <label className="field-label" htmlFor="icp">
@@ -376,10 +400,10 @@ function CampaignPageInner() {
                                 <div style={styles.loadingOrb} />
                                 <div className="spinner" style={{ width: "40px", height: "40px", borderWidth: "3px" }} />
                                 <p style={{ color: "#94a3b8", marginTop: "20px", fontSize: "15px" }}>
-                                    Searching vector DB & generating content...
+                                    Executing Multi-Agent AI Pipeline...
                                 </p>
                                 <p style={{ color: "#475569", fontSize: "13px", marginTop: "8px" }}>
-                                    This may take 30–60 seconds
+                                    This may take 1-2 minutes as 5 specialized AI agents analyze your brand and formulate the brain.
                                 </p>
                             </div>
                         )}
@@ -427,6 +451,17 @@ function CampaignPageInner() {
 
                                 {/* Tabs */}
                                 <div style={styles.tabs}>
+                                    {result.ai_brain && (
+                                        <button
+                                            onClick={() => setActiveTab("ai_brain")}
+                                            style={{
+                                                ...styles.tab,
+                                                ...(activeTab === "ai_brain" ? styles.tabActive : {}),
+                                            }}
+                                        >
+                                            🧠 AI Brain
+                                        </button>
+                                    )}
                                     {CONTENT_TYPES.filter((ct) => result[ct.id as keyof GeneratedContent]).map((ct) => (
                                         <button
                                             key={ct.id}
@@ -463,6 +498,11 @@ function CampaignPageInner() {
                                     </button>
                                 </div>
 
+                                {/* AI Brain Tab */}
+                                {activeTab === "ai_brain" && result.ai_brain && (
+                                    <AiBrainResult data={result.ai_brain} />
+                                )}
+
                                 {/* Image Tab */}
                                 {activeTab === "image" && result.image && (
                                     <ImageResult data={result.image} />
@@ -487,6 +527,58 @@ function CampaignPageInner() {
 }
 
 /* ─── Result Components ─────────────────────────────────── */
+
+function AiBrainResult({ data }: { data: any }) {
+    return (
+        <div style={styles.resultContainer}>
+            <ResultCard icon="🎯" title="Positioning">
+                <p style={styles.captionText}>{data.positioning?.statement || "N/A"}</p>
+                <div style={styles.hashtagGrid} className="mt-2">
+                    {data.positioning?.taglines?.map((t: string, i: number) => (
+                        <span key={i} style={styles.hashtag}>"{t}"</span>
+                    ))}
+                </div>
+            </ResultCard>
+
+            <ResultCard icon="👥" title="Target Audience">
+                <div style={{ marginBottom: "16px" }}>
+                    <strong style={{ color: "#f8fafc" }}>Primary:</strong> <span style={styles.bodyText}>{data.target_users?.primary?.profile || "N/A"}</span>
+                </div>
+                <div>
+                    <strong style={{ color: "#f8fafc" }}>Secondary:</strong> <span style={styles.bodyText}>{data.target_users?.secondary?.profile || "N/A"}</span>
+                </div>
+            </ResultCard>
+
+            <ResultCard icon="⚔️" title="Competition & Alternatives">
+                <div style={{ marginBottom: "16px" }}>
+                    <strong style={{ color: "#f8fafc" }}>Competitors:</strong> <span style={styles.bodyText}>{(data.competitors || []).join(", ") || "N/A"}</span>
+                </div>
+                <div style={{ marginBottom: "16px" }}>
+                    <strong style={{ color: "#f8fafc" }}>Alternatives:</strong> <span style={styles.bodyText}>{data.alternative_product || "N/A"}</span>
+                </div>
+                <div>
+                    <strong style={{ color: "#f8fafc" }}>Advantages:</strong> <span style={styles.bodyText}>{data.advantages || "N/A"}</span>
+                </div>
+            </ResultCard>
+
+            <ResultCard icon="💡" title="Use Cases">
+                {data.use_cases && data.use_cases.length > 0 ? data.use_cases.map((uc: any, i: number) => (
+                    <div key={i} style={{ marginBottom: "12px" }}>
+                        <strong style={{ color: "#f8fafc" }}>{uc.title}:</strong> <span style={styles.bodyText}>{uc.description}</span>
+                    </div>
+                )) : <span style={styles.bodyText}>N/A</span>}
+            </ResultCard>
+
+            <ResultCard icon="📈" title="Objectives">
+                <ul style={{ paddingLeft: "20px", margin: "10px 0", color: "#94a3b8", fontSize: "14px" }}>
+                    {data.objectives && data.objectives.length > 0 ? data.objectives.map((obj: string, i: number) => (
+                        <li key={i}>{obj}</li>
+                    )) : <li>N/A</li>}
+                </ul>
+            </ResultCard>
+        </div>
+    );
+}
 
 function ImageResult({ data }: { data: ImageContent }) {
     return (

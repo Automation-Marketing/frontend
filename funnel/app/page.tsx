@@ -15,6 +15,8 @@ export default function HomePage() {
 
   const [form, setForm] = useState({
     company_name: "",
+    industry: "",
+    region: "",
     instagram_handle: "",
     linkedin_handle: "",
     twitter_handle: "",
@@ -118,6 +120,38 @@ export default function HomePage() {
                   onChange={handleChange}
                   required
                 />
+              </div>
+
+              <div style={styles.grid}>
+                <div style={styles.formGroup}>
+                  <label className="field-label" htmlFor="industry">
+                    <span style={styles.platformIcon}>🏭</span> Industry
+                  </label>
+                  <input
+                    id="industry"
+                    name="industry"
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. SaaS, E-commerce, Healthcare"
+                    value={form.industry}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div style={styles.formGroup}>
+                  <label className="field-label" htmlFor="region">
+                    <span style={styles.platformIcon}>🌍</span> Region
+                  </label>
+                  <input
+                    id="region"
+                    name="region"
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. India, US, Global"
+                    value={form.region}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
 
               <div style={styles.divider}>
