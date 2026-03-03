@@ -293,6 +293,14 @@ function CalendarPageInner() {
                                     </div>
                                 ) : (
                                     <>
+                                        {(selectedDay.content_type === "canonical_post" || selectedDay.content_type === "image") && selectedDay.image_url && (
+                                            <ResultCard icon="🖼️" title="AI Generated Image">
+                                                <div style={{ width: "100%", borderRadius: "12px", overflow: "hidden", background: "rgba(0,0,0,0.2)", aspectRatio: "1 / 1" }}>
+                                                    <img src={`${BACKEND_URL}${selectedDay.image_url}`} alt="AI Generated" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                                </div>
+                                            </ResultCard>
+                                        )}
+
                                         {(selectedDay.content_type === "canonical_post" || selectedDay.content_type === "image") && selectedDay.canonical_post && (
                                             <ResultCard icon="📝" title="Canonical Post">
                                                 <p style={styles.captionText}>{selectedDay.canonical_post}</p>
@@ -317,7 +325,7 @@ function CalendarPageInner() {
                                             <ResultCard icon="🏷️" title="Suggested Tags">
                                                 <div style={styles.hashtagGrid}>
                                                     {selectedDay.tags.map((tag, i) => (
-                                                        <span key={i} style={styles.hashtag}>#{tag}</span>
+                                                        <span key={i} style={styles.hashtag}>#{tag.replace(/^#+/, '')}</span>
                                                     ))}
                                                 </div>
                                             </ResultCard>

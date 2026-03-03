@@ -18,7 +18,7 @@ export default function HomePage() {
     industry: "",
     region: "",
     instagram_handle: "",
-    linkedin_handle: "",
+    linkedin_url: "",
     twitter_handle: "",
   });
 
@@ -40,7 +40,6 @@ export default function HomePage() {
     setLoading(true);
     setCurrentStep(1);
 
-    // Simulate step progression while waiting for backend
     const stepTimer = setInterval(() => {
       setCurrentStep((prev) => {
         if (prev < 3) return prev + 1;
@@ -68,13 +67,12 @@ export default function HomePage() {
         return;
       }
 
-      // Small delay to show final step
       await new Promise((r) => setTimeout(r, 800));
 
       router.push(
-        `/campaign?brand_id=${data.brand_id}&company=${encodeURIComponent(data.company_name)}`
+        `/campaign/create?brand_id=${data.brand_id}&company=${encodeURIComponent(data.company_name)}`
       );
-    } catch (err) {
+    } catch {
       clearInterval(stepTimer);
       setError("Could not connect to backend. Make sure the server is running.");
       setLoading(false);
@@ -83,182 +81,61 @@ export default function HomePage() {
   };
 
   return (
-    <div style={styles.page}>
-      {/* Background orbs */}
-      <div style={styles.orb1} />
-      <div style={styles.orb2} />
+    <div className="page-wrapper">
 
-      <div style={styles.container}>
-        {/* Header */}
-        <div style={styles.header}>
-          <div style={styles.badge}>AI-Powered Content Generation</div>
-          <h1 style={styles.title}>
-            Welcome to{" "}
-            <span className="gradient-text">FunnelAI</span>
+      <div className="page-container">
+        {/* Hero header */}
+        <div style={{ textAlign: "center", marginBottom: "48px" }}>
+          <h1 style={{ fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 800, marginBottom: "16px", lineHeight: 1.1 }}>
+            Welcome to <span className="gradient-text">FunnelAI</span>
           </h1>
-          <p style={styles.subtitle}>
-            Enter your brand's social media handles. We'll scrape, process, and embed
-            your content — then help you generate campaigns that actually convert.
+          <p style={{ fontSize: "16px", color: "var(--text-secondary)", lineHeight: 1.7, maxWidth: "600px", margin: "0 auto" }}>
+            Enter your brand's social media handles. We'll scrape, process, and embed your content then
+            help you generate campaigns that actually convert.
           </p>
         </div>
 
-        {/* Card */}
-        <div className="glass-card" style={styles.card}>
-          {!loading ? (
-            <form onSubmit={handleSubmit} style={styles.form}>
-              <div style={styles.formGroup}>
-                <label className="field-label" htmlFor="company_name">
-                  Company Name *
-                </label>
-                <input
-                  id="company_name"
-                  name="company_name"
-                  type="text"
-                  className="input-field"
-                  placeholder="e.g. Tesla, Notion, Stripe"
-                  value={form.company_name}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div style={styles.grid}>
-                <div style={styles.formGroup}>
-                  <label className="field-label" htmlFor="industry">
-                    <span style={styles.platformIcon}>🏭</span> Industry
-                  </label>
-                  <input
-                    id="industry"
-                    name="industry"
-                    type="text"
-                    className="input-field"
-                    placeholder="e.g. SaaS, E-commerce, Healthcare"
-                    value={form.industry}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div style={styles.formGroup}>
-                  <label className="field-label" htmlFor="region">
-                    <span style={styles.platformIcon}>🌍</span> Region
-                  </label>
-                  <input
-                    id="region"
-                    name="region"
-                    type="text"
-                    className="input-field"
-                    placeholder="e.g. India, US, Global"
-                    value={form.region}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              <div style={styles.divider}>
-                <span style={styles.dividerText}>Social Media Handles</span>
-              </div>
-
-              <div style={styles.grid}>
-                <div style={styles.formGroup}>
-                  <label className="field-label" htmlFor="instagram_handle">
-                    <span style={styles.platformIcon}>📸</span> Instagram Handle
-                  </label>
-                  <div style={styles.inputWrapper}>
-                    <span style={styles.inputPrefix}>@</span>
-                    <input
-                      id="instagram_handle"
-                      name="instagram_handle"
-                      type="text"
-                      className="input-field"
-                      style={{ paddingLeft: "32px" }}
-                      placeholder="username"
-                      value={form.instagram_handle}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-
-                <div style={styles.formGroup}>
-                  <label className="field-label" htmlFor="twitter_handle">
-                    <span style={styles.platformIcon}>🐦</span> Twitter / X Handle
-                  </label>
-                  <div style={styles.inputWrapper}>
-                    <span style={styles.inputPrefix}>@</span>
-                    <input
-                      id="twitter_handle"
-                      name="twitter_handle"
-                      type="text"
-                      className="input-field"
-                      style={{ paddingLeft: "32px" }}
-                      placeholder="username"
-                      value={form.twitter_handle}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div style={styles.formGroup}>
-                <label className="field-label" htmlFor="linkedin_handle">
-                  <span style={styles.platformIcon}>💼</span> LinkedIn Company URL
-                </label>
-                <div style={styles.inputWrapper}>
-                  <span style={styles.inputPrefix}>@</span>
-                  <input
-                    id="linkedin_handle"
-                    name="linkedin_handle"
-                    type="text"
-                    className="input-field"
-                    style={{ paddingLeft: "32px" }}
-                    placeholder="username"
-                    value={form.linkedin_handle}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              {error && <p style={styles.error}>{error}</p>}
-
-              <button type="submit" className="btn-primary animate-pulse-glow" style={styles.submitBtn}>
-                <span>🚀</span> Analyze & Get Started
-              </button>
-
-              <p style={styles.hint}>
-                At least one social handle is recommended for best results.
-              </p>
-            </form>
-          ) : (
-            <div style={styles.loadingContainer}>
-              <div style={styles.loadingTitle}>
+        {loading ? (
+          /* ─── Loading State ─── */
+          <div style={{ maxWidth: "500px", margin: "0 auto", textAlign: "center" }}>
+            <div className="glass-card" style={{ padding: "48px 40px" }}>
+              <div style={{ fontSize: "24px", fontWeight: 700, marginBottom: "8px" }}>
                 Setting up <span className="gradient-text">{form.company_name}</span>
               </div>
-              <p style={styles.loadingSubtitle}>
+              <p style={{ color: "var(--text-secondary)", fontSize: "14px", marginBottom: "40px" }}>
                 This may take a minute while we gather your brand data...
               </p>
-
-              <div style={styles.steps}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", textAlign: "left", maxWidth: "320px", margin: "0 auto" }}>
                 {STEPS.map((step) => {
                   const isDone = currentStep > step.id;
                   const isActive = currentStep === step.id;
                   return (
-                    <div key={step.id} style={styles.step}>
+                    <div key={step.id} style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                       <div
                         style={{
-                          ...styles.stepIcon,
-                          ...(isDone ? styles.stepDone : {}),
-                          ...(isActive ? styles.stepActive : {}),
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "50%",
+                          background: isDone ? "rgba(124, 58, 237, 0.2)" : isActive ? "rgba(59, 130, 246, 0.15)" : "var(--bg-glass)",
+                          border: isDone ? "1px solid rgba(124, 58, 237, 0.4)" : isActive ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid var(--glass-border)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: isDone ? "16px" : "18px",
+                          fontWeight: isDone ? 700 : 400,
+                          color: isDone ? "#a855f7" : "inherit",
+                          flexShrink: 0,
+                          transition: "all 0.3s ease",
                         }}
                       >
                         {isDone ? "✓" : isActive ? <div className="spinner" /> : step.icon}
                       </div>
                       <span
                         style={{
-                          ...styles.stepLabel,
-                          color: isDone
-                            ? "#a855f7"
-                            : isActive
-                              ? "#f8fafc"
-                              : "#475569",
+                          fontSize: "15px",
+                          fontWeight: 500,
+                          color: isDone ? "#a855f7" : isActive ? "var(--text-primary)" : "var(--text-muted)",
+                          transition: "color 0.3s ease",
                         }}
                       >
                         {step.label}
@@ -268,242 +145,189 @@ export default function HomePage() {
                 })}
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          /* ─── Two Column Layout: Form + Smart Scraping ─── */
+          <div className="two-col-layout">
+            {/* Left: Form */}
+            <div className="glass-card" style={{ padding: "36px" }}>
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                {/* Company Name */}
+                <div>
+                  <label className="field-label" htmlFor="company_name">
+                    Company Name *
+                  </label>
+                  <input
+                    id="company_name"
+                    name="company_name"
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. Tesla, Notion, Stripe"
+                    value={form.company_name}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
 
-        {/* Features */}
-        {!loading && (
-          <div style={styles.features}>
-            {[
-              { icon: "🔍", title: "Smart Scraping", desc: "Pulls real posts from Instagram, LinkedIn & Twitter" },
-              { icon: "🧠", title: "Vector Embeddings", desc: "Stores your brand voice in semantic memory" },
-              { icon: "✨", title: "AI Generation", desc: "Creates images, carousels & video scripts" },
-            ].map((f) => (
-              <div key={f.title} className="glass-card" style={styles.featureCard}>
-                <div style={styles.featureIcon}>{f.icon}</div>
-                <div style={styles.featureTitle}>{f.title}</div>
-                <div style={styles.featureDesc}>{f.desc}</div>
+                {/* Industry & Region row */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                  <div>
+                    <label className="field-label" htmlFor="industry">
+                      🏭 Industry
+                    </label>
+                    <input
+                      id="industry"
+                      name="industry"
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. SaaS, E-commerce"
+                      value={form.industry}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="region">
+                      🌍 Region
+                    </label>
+                    <input
+                      id="region"
+                      name="region"
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. India, US, Global"
+                      value={form.region}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Social Media Handles divider */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "4px 0" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", whiteSpace: "nowrap" }}>
+                    Social Media Handles
+                  </span>
+                  <div style={{ flex: 1, height: "1px", background: "var(--glass-border)" }} />
+                </div>
+
+                {/* Instagram & Twitter row */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                  <div>
+                    <label className="field-label" htmlFor="instagram_handle">
+                      📸 Instagram
+                    </label>
+                    <input
+                      id="instagram_handle"
+                      name="instagram_handle"
+                      type="text"
+                      className="input-field"
+                      placeholder="@username"
+                      value={form.instagram_handle}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label" htmlFor="twitter_handle">
+                      🐦 Twitter / X
+                    </label>
+                    <input
+                      id="twitter_handle"
+                      name="twitter_handle"
+                      type="text"
+                      className="input-field"
+                      placeholder="@username"
+                      value={form.twitter_handle}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                {/* LinkedIn */}
+                <div>
+                  <label className="field-label" htmlFor="linkedin_url">
+                    💼 LinkedIn Company URL
+                  </label>
+                  <input
+                    id="linkedin_url"
+                    name="linkedin_url"
+                    type="text"
+                    className="input-field"
+                    placeholder="https://linkedin.com/company/your-company"
+                    value={form.linkedin_url}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                {error && (
+                  <p style={{
+                    color: "#f87171",
+                    fontSize: "13px",
+                    padding: "10px 14px",
+                    background: "rgba(248, 113, 113, 0.08)",
+                    border: "1px solid rgba(248, 113, 113, 0.2)",
+                    borderRadius: "8px",
+                  }}>
+                    {error}
+                  </p>
+                )}
+
+                <button type="submit" className="btn-primary animate-pulse-glow" style={{ width: "100%", padding: "16px", fontSize: "16px", marginTop: "4px" }}>
+                  <span>🚀</span> Analyze & Get Started
+                </button>
+
+                <p style={{ textAlign: "center", fontSize: "12px", color: "var(--text-muted)" }}>
+                  At least one social handle is recommended.
+                </p>
+              </form>
+            </div>
+
+            {/* Right: Smart Scraping Info */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+              {/* Illustration placeholder - gradient card */}
+              <div style={{
+                borderRadius: "20px",
+                overflow: "hidden",
+                background: "var(--gradient-glass)",
+                border: "1px solid var(--glass-border)",
+                height: "280px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+                backdropFilter: "blur(20px) saturate(1.4)",
+              }}>
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)" }} />
+                <div style={{ position: "relative", textAlign: "center", padding: "20px" }}>
+                  <div style={{ fontSize: "64px", marginBottom: "12px" }}>🔍</div>
+                  <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>AI-Powered Analysis</div>
+                  <div style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "8px" }}>We analyze your social presence automatically</div>
+                </div>
               </div>
-            ))}
+
+              {/* Smart Scraping section */}
+              <div className="glass-card" style={{ padding: "28px 32px" }}>
+                <h2 style={{ fontSize: "26px", fontWeight: 700, marginBottom: "20px", color: "var(--text-primary)" }}>
+                  Smart Scraping
+                </h2>
+                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {[
+                    "Scrapes real posts from Instagram, LinkedIn & Twitter",
+                    "Understands brand tone automatically",
+                    "No manual data entry required",
+                    "Filters out spam and irrelevant content",
+                    "Adapts to platform changes in real time",
+                    "Scales effortlessly as data volume grows",
+                  ].map((item, i) => (
+                    <li key={i} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", color: "var(--text-secondary)" }}>
+                      <span style={{ color: "#7c3aed", fontSize: "8px" }}>●</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "40px 20px",
-    position: "relative",
-    overflow: "hidden",
-  },
-  orb1: {
-    position: "fixed",
-    top: "-20%",
-    right: "-10%",
-    width: "600px",
-    height: "600px",
-    borderRadius: "50%",
-    background: "radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, transparent 70%)",
-    pointerEvents: "none",
-  },
-  orb2: {
-    position: "fixed",
-    bottom: "-20%",
-    left: "-10%",
-    width: "500px",
-    height: "500px",
-    borderRadius: "50%",
-    background: "radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%)",
-    pointerEvents: "none",
-  },
-  container: {
-    width: "100%",
-    maxWidth: "640px",
-    position: "relative",
-    zIndex: 1,
-  },
-  header: {
-    textAlign: "center",
-    marginBottom: "40px",
-  },
-  badge: {
-    display: "inline-block",
-    padding: "6px 16px",
-    background: "rgba(124, 58, 237, 0.15)",
-    border: "1px solid rgba(124, 58, 237, 0.3)",
-    borderRadius: "100px",
-    fontSize: "12px",
-    fontWeight: 500,
-    color: "#a855f7",
-    marginBottom: "20px",
-    letterSpacing: "0.05em",
-    textTransform: "uppercase",
-  },
-  title: {
-    fontSize: "clamp(36px, 6vw, 52px)",
-    fontWeight: 800,
-    lineHeight: 1.1,
-    marginBottom: "16px",
-    letterSpacing: "-0.02em",
-  },
-  subtitle: {
-    fontSize: "16px",
-    color: "#94a3b8",
-    lineHeight: 1.7,
-    maxWidth: "480px",
-    margin: "0 auto",
-  },
-  card: {
-    padding: "40px",
-    marginBottom: "32px",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-  },
-  formGroup: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "16px",
-  },
-  divider: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    margin: "4px 0",
-  },
-  dividerText: {
-    fontSize: "12px",
-    fontWeight: 600,
-    color: "#475569",
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    whiteSpace: "nowrap",
-  },
-  inputWrapper: {
-    position: "relative",
-  },
-  inputPrefix: {
-    position: "absolute",
-    left: "12px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    color: "#475569",
-    fontSize: "14px",
-    pointerEvents: "none",
-    zIndex: 1,
-  },
-  platformIcon: {
-    marginRight: "6px",
-  },
-  error: {
-    color: "#f87171",
-    fontSize: "13px",
-    padding: "10px 14px",
-    background: "rgba(248, 113, 113, 0.08)",
-    border: "1px solid rgba(248, 113, 113, 0.2)",
-    borderRadius: "8px",
-  },
-  submitBtn: {
-    width: "100%",
-    padding: "16px",
-    fontSize: "16px",
-    marginTop: "4px",
-  },
-  hint: {
-    textAlign: "center",
-    fontSize: "12px",
-    color: "#475569",
-  },
-  loadingContainer: {
-    textAlign: "center",
-    padding: "20px 0",
-  },
-  loadingTitle: {
-    fontSize: "24px",
-    fontWeight: 700,
-    marginBottom: "8px",
-  },
-  loadingSubtitle: {
-    color: "#94a3b8",
-    fontSize: "14px",
-    marginBottom: "40px",
-  },
-  steps: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-    textAlign: "left",
-    maxWidth: "320px",
-    margin: "0 auto",
-  },
-  step: {
-    display: "flex",
-    alignItems: "center",
-    gap: "16px",
-  },
-  stepIcon: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "18px",
-    flexShrink: 0,
-    transition: "all 0.3s ease",
-  },
-  stepDone: {
-    background: "rgba(124, 58, 237, 0.2)",
-    border: "1px solid rgba(124, 58, 237, 0.4)",
-    color: "#a855f7",
-    fontWeight: 700,
-    fontSize: "16px",
-  },
-  stepActive: {
-    background: "rgba(59, 130, 246, 0.15)",
-    border: "1px solid rgba(59, 130, 246, 0.3)",
-  },
-  stepLabel: {
-    fontSize: "15px",
-    fontWeight: 500,
-    transition: "color 0.3s ease",
-  },
-  features: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "16px",
-  },
-  featureCard: {
-    padding: "20px",
-    textAlign: "center",
-  },
-  featureIcon: {
-    fontSize: "28px",
-    marginBottom: "10px",
-  },
-  featureTitle: {
-    fontSize: "14px",
-    fontWeight: 600,
-    marginBottom: "6px",
-    color: "#f8fafc",
-  },
-  featureDesc: {
-    fontSize: "12px",
-    color: "#64748b",
-    lineHeight: 1.5,
-  },
-};
