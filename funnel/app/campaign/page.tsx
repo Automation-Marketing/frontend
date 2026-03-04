@@ -21,6 +21,7 @@ type DayContent = {
     video_script?: any;
     tags?: string[];
     image_url?: string;
+    video_url?: string;
     error?: string;
 };
 
@@ -171,6 +172,9 @@ function DashboardInner() {
             if (payloadData.image_url && !payloadData.image_url.startsWith("http")) {
                 payloadData.image_url = `${BACKEND_URL}${payloadData.image_url}`;
             }
+            if (payloadData.video_url && !payloadData.video_url.startsWith("http")) {
+                payloadData.video_url = `${BACKEND_URL}${payloadData.video_url}`;
+            }
             const res = await fetch(`${BACKEND_URL}/publish/telegram`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -292,6 +296,20 @@ function DashboardInner() {
                                             </div>
                                         )}
 
+                                        {/* Video */}
+                                        {selectedDayContent.video_url && (
+                                            <div style={{ borderRadius: "12px", overflow: "hidden", background: "rgba(0,0,0,0.15)", marginBottom: "16px", maxWidth: "100%", margin: "0 auto 16px auto" }}>
+                                                <video
+                                                    src={`${BACKEND_URL}${selectedDayContent.video_url}`}
+                                                    controls
+                                                    autoPlay
+                                                    loop
+                                                    playsInline
+                                                    style={{ width: "100%", maxHeight: "600px", objectFit: "contain", display: "block" }}
+                                                />
+                                            </div>
+                                        )}
+
                                         {/* Caption */}
                                         {selectedDayContent.canonical_post && (
                                             <div style={{ marginBottom: "14px" }}>
@@ -311,9 +329,9 @@ function DashboardInner() {
                                                     🎬 Video Script
                                                 </div>
                                                 <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px" }}>
-                                                    <div><strong style={{ color: "var(--text-primary)" }}>Hook:</strong> <span style={{ color: "var(--text-secondary)" }}>{selectedDayContent.video_script.hook}</span></div>
-                                                    <div><strong style={{ color: "var(--text-primary)" }}>Body:</strong> <span style={{ color: "var(--text-secondary)" }}>{selectedDayContent.video_script.body}</span></div>
-                                                    <div><strong style={{ color: "var(--text-primary)" }}>CTA:</strong> <span style={{ color: "var(--text-secondary)" }}>{selectedDayContent.video_script.cta}</span></div>
+                                                    <div><strong style={{ color: "var(--purple-light)" }}>Hook:</strong> <span style={{ color: "var(--text-primary)" }}>{selectedDayContent.video_script.hook}</span></div>
+                                                    <div><strong style={{ color: "var(--purple-light)" }}>Body:</strong> <span style={{ color: "var(--text-primary)" }}>{selectedDayContent.video_script.body}</span></div>
+                                                    <div><strong style={{ color: "var(--purple-light)" }}>CTA:</strong> <span style={{ color: "var(--text-primary)" }}>{selectedDayContent.video_script.cta}</span></div>
                                                 </div>
                                             </div>
                                         )}

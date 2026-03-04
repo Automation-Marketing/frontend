@@ -18,6 +18,7 @@ type DayContent = {
     video_script?: VideoScript;
     tags?: string[];
     image_url?: string;
+    video_url?: string;
     error?: string;
 };
 
@@ -94,6 +95,9 @@ function CalendarPageInner() {
             // Format full image URLs if present
             if (payloadData.image_url && !payloadData.image_url.startsWith("http")) {
                 payloadData.image_url = `${BACKEND_URL}${payloadData.image_url}`;
+            }
+            if (payloadData.video_url && !payloadData.video_url.startsWith("http")) {
+                payloadData.video_url = `${BACKEND_URL}${payloadData.video_url}`;
             }
             if (payloadData.carousel && payloadData.carousel.slides) {
                 payloadData.carousel.slides.forEach((s: any) => {
@@ -297,6 +301,14 @@ function CalendarPageInner() {
                                             <ResultCard icon="🖼️" title="AI Generated Image">
                                                 <div style={{ width: "100%", borderRadius: "12px", overflow: "hidden", background: "rgba(0,0,0,0.2)", aspectRatio: "1 / 1" }}>
                                                     <img src={`${BACKEND_URL}${selectedDay.image_url}`} alt="AI Generated" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                                </div>
+                                            </ResultCard>
+                                        )}
+
+                                        {selectedDay.content_type === "video_script" && selectedDay.video_url && (
+                                            <ResultCard icon="🎥" title="AI Generated Video">
+                                                <div style={{ width: "100%", borderRadius: "12px", overflow: "hidden", background: "rgba(0,0,0,0.2)", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                                    <video src={`${BACKEND_URL}${selectedDay.video_url}`} controls autoPlay loop playsInline style={{ width: "100%", maxHeight: "600px", objectFit: "contain", borderRadius: "12px" }} />
                                                 </div>
                                             </ResultCard>
                                         )}
