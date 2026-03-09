@@ -11,6 +11,7 @@ export default function Navbar() {
   const links = [
     { label: "Dashboard", href: "/campaign" },
     { label: "Create Campaign", href: "/campaign/create" },
+    { label: "⚙️ Settings", href: "/settings" },
     { label: "Need Help?", href: "#" },
   ];
 

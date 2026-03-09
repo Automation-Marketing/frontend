@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const STEPS = [
-  { id: 1, label: "Scraping social media", icon: "🌐" },
-  { id: 2, label: "Processing content", icon: "📝" },
-  { id: 3, label: "Embedding into vector DB", icon: "🧠" },
-  { id: 4, label: "Setting up your brand", icon: "✅" },
+  { id: 1, label: "Saving your brand profile", icon: "🏢" },
+  { id: 2, label: "Resolving social handles", icon: "🔗" },
+  { id: 3, label: "Setting up your workspace", icon: "⚙️" },
+  { id: 4, label: "Brand ready!", icon: "✅" },
 ];
 
 export default function HomePage() {

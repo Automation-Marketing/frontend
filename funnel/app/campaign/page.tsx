@@ -102,7 +102,9 @@ function DashboardInner() {
     const [selectedDate, setSelectedDate] = useState(now);
     const [campaign, setCampaign] = useState<Campaign | null>(null);
     const [selectedDayContent, setSelectedDayContent] = useState<DayContent | null>(null);
-    const [publishing, setPublishing] = useState(false);
+    const [publishMenuOpen, setPublishMenuOpen] = useState(false);
+    const [publishingTo, setPublishingTo] = useState<string | null>(null);
+    const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
 
     useEffect(() => {
         if (!campaignId) return;
@@ -210,36 +212,50 @@ function DashboardInner() {
     const totalCampaigns = campaign ? 1 : 0;
     const campaignsOnDate = selectedDayContent ? 1 : 0;
 
-    const handlePublish = async () => {
+    const handlePublishTo = async (platform: string) => {
         if (!selectedDayContent || !campaign) return;
-        setPublishing(true);
+        setPublishingTo(platform);
+        setPublishSuccess(null);
         try {
             let contentType = selectedDayContent.content_type;
             if (contentType === "image") contentType = "canonical";
             const payloadData = JSON.parse(JSON.stringify(selectedDayContent));
             payloadData.template_type = campaign.generated_content.template_type;
-            if (payloadData.image_url && !payloadData.image_url.startsWith("http")) {
-                payloadData.image_url = `${BACKEND_URL}${payloadData.image_url}`;
-            }
-            if (payloadData.video_url && !payloadData.video_url.startsWith("http")) {
-                payloadData.video_url = `${BACKEND_URL}${payloadData.video_url}`;
-            }
-            const res = await fetch(`${BACKEND_URL}/publish/telegram`, {
+            // Do NOT prepend BACKEND_URL to the payload data being sent to the publish endpoint
+            // The backend handles converting relative /static/ paths to ngrok URLs.
+            // if (payloadData.image_url && !payloadData.image_url.startsWith("http")) {
+            //     payloadData.image_url = `${BACKEND_URL}${payloadData.image_url}`;
+            // }
+            // if (payloadData.video_url && !payloadData.video_url.startsWith("http")) {
+            //     payloadData.video_url = `${BACKEND_URL}${payloadData.video_url}`;
+            // }
+            const res = await fetch(`${BACKEND_URL}/publish/${platform}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content_type: contentType, data: payloadData }),
+                body: JSON.stringify({
+                    brand_id: parseInt(brandId || "0"),
+                    content_type: contentType,
+                    data: payloadData
+                }),
             });
             const data = await res.json();
             if (data.success) {
-                alert(`Day ${selectedDayContent.day} published to Telegram! 🚀`);
+                if (data.publish_url) {
+                    window.open(data.publish_url, "_blank");
+                    if (data.message) {
+                        alert(data.message);
+                    }
+                }
+                setPublishSuccess(platform);
+                setTimeout(() => setPublishSuccess(null), 3000);
             } else {
-                alert("Failed to publish: " + (data.detail || data.error || "Unknown error"));
+                alert(`Failed to publish to ${platform}: ` + (data.detail || data.error || "Unknown error"));
             }
         } catch (e) {
             console.error(e);
-            alert("Failed to connect to backend for publishing.");
+            alert(`Failed to connect to backend for publishing to ${platform}.`);
         } finally {
-            setPublishing(false);
+            setPublishingTo(null);
         }
     };
 
@@ -328,10 +344,102 @@ function DashboardInner() {
                                                 <span>{getContentTypeIcon(selectedDayContent.content_type)}</span>
                                                 Day {selectedDayContent.day} — {selectedDayContent.content_type.replace("_", " ").toUpperCase()}
                                             </h3>
-                                            <button onClick={handlePublish} disabled={publishing || !!selectedDayContent.error}
-                                                className="btn-primary" style={{ padding: "8px 16px", fontSize: "13px" }}>
-                                                {publishing ? "..." : "🚀 Publish"}
-                                            </button>
+                                            <div style={{ position: "relative" }}>
+                                                <button onClick={() => setPublishMenuOpen(!publishMenuOpen)} disabled={!!publishingTo || !!selectedDayContent.error}
+                                                    className="btn-primary" style={{ padding: "8px 16px", fontSize: "13px", display: "flex", gap: "6px", alignItems: "center" }}>
+                                                    {publishingTo ? <div className="spinner" style={{ width: "14px", height: "14px", borderWidth: "2px" }} /> : "🚀"} Publish {publishMenuOpen ? "▲" : "▼"}
+                                                </button>
+
+                                                {publishMenuOpen && (
+                                                    <div style={{
+                                                        position: "absolute",
+                                                        top: "calc(100% + 8px)",
+                                                        right: "0",
+                                                        width: "220px",
+                                                        background: "rgba(15, 23, 42, 0.95)",
+                                                        backdropFilter: "blur(20px)",
+                                                        border: "1px solid rgba(255,255,255,0.1)",
+                                                        borderRadius: "14px",
+                                                        padding: "8px",
+                                                        display: "flex",
+                                                        flexDirection: "column",
+                                                        gap: "4px",
+                                                        zIndex: 50,
+                                                        boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
+                                                        animation: "fadeIn 0.15s ease-out",
+                                                    }}>
+
+                                                        {/* Instagram */}
+                                                        <button
+                                                            onClick={() => handlePublishTo("instagram")}
+                                                            disabled={publishingTo === "instagram"}
+                                                            style={{
+                                                                display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px",
+                                                                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                                                                borderRadius: "10px", color: "#e2e8f0", fontSize: "14px", fontWeight: 500, cursor: "pointer"
+                                                            }}
+                                                            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(225, 48, 108, 0.15)"; e.currentTarget.style.borderColor = "rgba(225, 48, 108, 0.4)"; }}
+                                                            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+                                                        >
+                                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                                                <linearGradient id="ig-gradient-2" x1="0" y1="24" x2="24" y2="0">
+                                                                    <stop stopColor="#FED373" />
+                                                                    <stop offset=".26" stopColor="#F15245" />
+                                                                    <stop offset=".55" stopColor="#D92E7F" />
+                                                                    <stop offset=".83" stopColor="#9B36B7" />
+                                                                    <stop offset="1" stopColor="#515ECF" />
+                                                                </linearGradient>
+                                                                <rect x="2" y="2" width="20" height="20" rx="5" stroke="url(#ig-gradient-2)" strokeWidth="2" />
+                                                                <circle cx="12" cy="12" r="4.5" stroke="url(#ig-gradient-2)" strokeWidth="2" />
+                                                                <circle cx="17.5" cy="6.5" r="1.25" fill="url(#ig-gradient-2)" />
+                                                            </svg>
+                                                            <span style={{ flex: 1, textAlign: "left" }}>Instagram</span>
+                                                            {publishingTo === "instagram" && <div className="spinner" style={{ width: "14px", height: "14px", borderWidth: "2px" }} />}
+                                                            {publishSuccess === "instagram" && <span style={{ color: "#4ade80" }}>✓</span>}
+                                                        </button>
+
+                                                        {/* Twitter/X */}
+                                                        <button
+                                                            onClick={() => handlePublishTo("twitter")}
+                                                            disabled={publishingTo === "twitter"}
+                                                            style={{
+                                                                display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px",
+                                                                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                                                                borderRadius: "10px", color: "#e2e8f0", fontSize: "14px", fontWeight: 500, cursor: "pointer"
+                                                            }}
+                                                            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)"; e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)"; }}
+                                                            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+                                                        >
+                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                                                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                                                            </svg>
+                                                            <span style={{ flex: 1, textAlign: "left" }}>Twitter / X</span>
+                                                            {publishingTo === "twitter" && <div className="spinner" style={{ width: "14px", height: "14px", borderWidth: "2px" }} />}
+                                                            {publishSuccess === "twitter" && <span style={{ color: "#4ade80" }}>✓</span>}
+                                                        </button>
+
+                                                        {/* LinkedIn */}
+                                                        <button
+                                                            onClick={() => handlePublishTo("linkedin")}
+                                                            disabled={publishingTo === "linkedin"}
+                                                            style={{
+                                                                display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px",
+                                                                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                                                                borderRadius: "10px", color: "#e2e8f0", fontSize: "14px", fontWeight: 500, cursor: "pointer"
+                                                            }}
+                                                            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(10, 102, 194, 0.15)"; e.currentTarget.style.borderColor = "rgba(10, 102, 194, 0.4)"; }}
+                                                            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+                                                        >
+                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#0A66C2">
+                                                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                                                            </svg>
+                                                            <span style={{ flex: 1, textAlign: "left" }}>LinkedIn</span>
+                                                            {publishingTo === "linkedin" && <div className="spinner" style={{ width: "14px", height: "14px", borderWidth: "2px" }} />}
+                                                            {publishSuccess === "linkedin" && <span style={{ color: "#4ade80" }}>✓</span>}
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
 
                                         {/* Image */}
