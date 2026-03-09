@@ -17,6 +17,7 @@ export default function HomePage() {
     company_name: "",
     industry: "",
     region: "",
+    website_url: "",
     instagram_handle: "",
     linkedin_url: "",
     twitter_handle: "",
@@ -166,6 +167,22 @@ export default function HomePage() {
                     value={form.company_name}
                     onChange={handleChange}
                     required
+                  />
+                </div>
+
+                {/* Website URL */}
+                <div>
+                  <label className="field-label" htmlFor="website_url">
+                    🌐 Website URL
+                  </label>
+                  <input
+                    id="website_url"
+                    name="website_url"
+                    type="text"
+                    className="input-field"
+                    placeholder="https://yourcompany.com"
+                    value={form.website_url}
+                    onChange={handleChange}
                   />
                 </div>
 

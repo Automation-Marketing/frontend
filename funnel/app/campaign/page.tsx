@@ -2,6 +2,11 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 const BACKEND_URL = "http://localhost:8000";
 
@@ -38,6 +43,50 @@ type Campaign = {
     };
     created_at: string;
 };
+
+function CarouselImageViewer({ data }: { data: any }) {
+    const allSlides: any[] = [...data.slides];
+    if (data.cta_slide) {
+        allSlides.push({ slide_number: data.slides.length + 1, title: data.cta_slide.title, body: data.cta_slide.body, image_url: data.cta_slide.image_url });
+    }
+
+    const hasImages = allSlides.some(s => s.image_url);
+
+    if (!hasImages) return null;
+
+    return (
+        <div style={{ borderRadius: "12px", background: "rgba(0,0,0,0.15)", overflow: "hidden", position: "relative", maxWidth: "450px", margin: "0 auto 16px auto" }}>
+            <Swiper
+                modules={[Navigation, Pagination, Autoplay]}
+                spaceBetween={0}
+                slidesPerView={1}
+                navigation
+                pagination={{ clickable: true }}
+                autoplay={{ delay: 3500, disableOnInteraction: false }}
+                style={{ width: "100%", aspectRatio: "1 / 1", maxHeight: "450px" }}
+            >
+                {allSlides.map((slide, i) => slide.image_url && (
+                    <SwiperSlide key={i}>
+                        <div style={{ width: "100%", height: "100%", position: "relative", backgroundColor: "#000" }}>
+                            <img src={`${BACKEND_URL}${slide.image_url}`} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.9 }} alt={`Slide ${i + 1}`} />
+                            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(transparent, rgba(0,0,0,0.9))", padding: "40px 20px 20px", color: "white", textAlign: "center" }}>
+                                {/* <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px", color: "#60a5fa", fontWeight: 700, marginBottom: "4px" }}>
+                                    Slide {i === allSlides.length - 1 && data.cta_slide ? "CTA" : i + 1}
+                                </div> */}
+                                <div style={{ fontSize: "16px", fontWeight: 600 }}>{slide.title}</div>
+                            </div>
+                        </div>
+                    </SwiperSlide>
+                ))}
+            </Swiper>
+            <style jsx global>{`
+                .swiper-button-next, .swiper-button-prev { color: white !important; transform: scale(0.6); }
+                .swiper-pagination-bullet { background: white !important; opacity: 0.5; }
+                .swiper-pagination-bullet-active { background: #60a5fa !important; opacity: 1; }
+            `}</style>
+        </div>
+    );
+}
 
 function DashboardInner() {
     const searchParams = useSearchParams();
@@ -263,7 +312,7 @@ function DashboardInner() {
                     </div>
 
                     {/* Right: Selected day content */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0px", minWidth: 0 }}>
                         {selectedDayContent ? (
                             <div className="glass-card animate-fade-in" style={{ padding: "20px", overflow: "hidden" }}>
                                 {selectedDayContent.error ? (
@@ -339,18 +388,20 @@ function DashboardInner() {
                                         {/* Carousel */}
                                         {selectedDayContent.carousel && (
                                             <div style={{ marginBottom: "14px" }}>
-                                                <div style={{ fontSize: "11px", fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
+                                                <CarouselImageViewer data={selectedDayContent.carousel} />
+
+                                                {/* <div style={{ fontSize: "11px", fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
                                                     🖼️ Carousel: {selectedDayContent.carousel.title}
-                                                </div>
-                                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                                    {selectedDayContent.carousel.slides?.map((slide: any, idx: number) => (
+                                                </div> */}
+                                                {/* <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                                    {[...selectedDayContent.carousel.slides, ...(selectedDayContent.carousel.cta_slide ? [{ ...selectedDayContent.carousel.cta_slide, slide_number: "CTA" }] : [])].map((slide: any, idx: number) => (
                                                         <div key={idx} style={{ padding: "8px 10px", background: "rgba(255,255,255,0.03)", borderRadius: "8px" }}>
                                                             <strong style={{ color: "var(--text-primary)", fontSize: "13px" }}>Slide {slide.slide_number}:</strong>{" "}
                                                             <span style={{ color: "#10b981", fontSize: "13px" }}>{slide.title}</span>
                                                             <p style={{ color: "var(--text-secondary)", marginTop: "3px", fontSize: "13px", lineHeight: 1.5 }}>{slide.body}</p>
                                                         </div>
                                                     ))}
-                                                </div>
+                                                </div> */}
                                             </div>
                                         )}
 

@@ -2,6 +2,11 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 // Reuse similar types
 type ImageContent = { caption: string; visual_description: string; hashtags: string[]; image_url?: string };
@@ -334,13 +339,11 @@ function CalendarPageInner() {
                                         )}
 
                                         {selectedDay.tags && selectedDay.tags.length > 0 && (
-                                            <ResultCard icon="🏷️" title="Suggested Tags">
-                                                <div style={styles.hashtagGrid}>
-                                                    {selectedDay.tags.map((tag, i) => (
-                                                        <span key={i} style={styles.hashtag}>#{tag.replace(/^#+/, '')}</span>
-                                                    ))}
-                                                </div>
-                                            </ResultCard>
+                                            <div style={{ ...styles.hashtagGrid, marginTop: "8px", padding: "0 4px" }}>
+                                                {selectedDay.tags.map((tag, i) => (
+                                                    <span key={i} style={styles.hashtag}>#{tag.replace(/^#+/, '')}</span>
+                                                ))}
+                                            </div>
                                         )}
                                     </>
                                 )}
@@ -370,48 +373,72 @@ export default function CalendarPage() {
 /* ─── Result Components (Reused) ─────────────────────────────────── */
 
 function CarouselResult({ data }: { data: CarouselContent }) {
-    const [activeSlide, setActiveSlide] = useState(0);
-    const allSlides = [...data.slides];
+    const allSlides: any[] = [...data.slides];
     if (data.cta_slide) {
-        allSlides.push({ slide_number: data.slides.length + 1, title: data.cta_slide.title, body: data.cta_slide.body });
+        allSlides.push({ slide_number: data.slides.length + 1, title: data.cta_slide.title, body: data.cta_slide.body, image_url: data.cta_slide.image_url });
     }
+
+    const hasImages = allSlides.some(s => s.image_url);
 
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <ResultCard icon="📌" title={data.title || "Carousel Concept"}>
-                <div style={styles.slideNav}>
-                    {allSlides.map((_, i) => (
-                        <button
-                            key={i}
-                            onClick={() => setActiveSlide(i)}
-                            style={{
-                                ...styles.slideDot,
-                                ...(activeSlide === i ? styles.slideDotActive : {}),
-                            }}
+            {hasImages && (
+                <ResultCard icon="🖼️" title="AI Generated Images">
+                    <div style={{ width: "100%", borderRadius: "12px", overflow: "hidden", background: "rgba(0,0,0,0.2)", position: "relative" }}>
+                        <Swiper
+                            modules={[Navigation, Pagination, Autoplay]}
+                            spaceBetween={0}
+                            slidesPerView={1}
+                            navigation
+                            pagination={{ clickable: true }}
+                            autoplay={{ delay: 3500, disableOnInteraction: false }}
+                            style={{ width: "100%", aspectRatio: "1 / 1" }}
                         >
-                            {i === allSlides.length - 1 ? "CTA" : i + 1}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="glass-card" style={styles.slideCard}>
-                    <div style={styles.slideNumber}>
-                        {activeSlide === allSlides.length - 1 ? "CTA Slide" : `Slide ${activeSlide + 1}`}
+                            {allSlides.map((slide, i) => slide.image_url && (
+                                <SwiperSlide key={i}>
+                                    <div style={{ width: "100%", height: "100%", position: "relative", backgroundColor: "#000" }}>
+                                        <img src={`${BACKEND_URL}${slide.image_url}`} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.9 }} alt={`Slide ${i + 1}`} />
+                                        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(transparent, rgba(0,0,0,0.9))", padding: "40px 20px 20px", color: "white", textAlign: "center" }}>
+                                            <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px", color: "#60a5fa", fontWeight: 700, marginBottom: "4px" }}>
+                                                Slide {i === allSlides.length - 1 && data.cta_slide ? "CTA" : i + 1}
+                                            </div>
+                                            <div style={{ fontSize: "16px", fontWeight: 600 }}>{slide.title}</div>
+                                        </div>
+                                    </div>
+                                </SwiperSlide>
+                            ))}
+                        </Swiper>
+                        <style jsx global>{`
+                            .swiper-button-next, .swiper-button-prev { color: white !important; transform: scale(0.6); }
+                            .swiper-pagination-bullet { background: white !important; opacity: 0.5; }
+                            .swiper-pagination-bullet-active { background: #60a5fa !important; opacity: 1; }
+                        `}</style>
                     </div>
+                </ResultCard>
+            )}
 
-                    <h3 style={styles.slideTitle}>{allSlides[activeSlide].title}</h3>
-                    <p style={styles.bodyText}>{allSlides[activeSlide].body}</p>
-                    {allSlides[activeSlide].image_url && (
-                        <div style={{ marginTop: "15px", padding: "10px", background: "rgba(0,0,0,0.2)", borderRadius: "8px" }}>
-                            <img src={`${BACKEND_URL}${allSlides[activeSlide].image_url}`} style={{ width: "100%", borderRadius: "6px" }} />
-                        </div>
-                    )}
+            <div className="glass-card" style={styles.resultCard}>
+                <div style={{ marginBottom: "16px", paddingBottom: "12px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    <span style={{ fontSize: "14px", fontWeight: 700, color: "#10b981", textTransform: "uppercase" }}>
+                        🖼️ CAROUSEL: {data.title}
+                    </span>
                 </div>
-
-                <div style={styles.slideProgress}>
-                    {activeSlide + 1} / {allSlides.length}
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    {allSlides.map((slide, i) => {
+                        const isCTA = i === allSlides.length - 1 && data.cta_slide;
+                        return (
+                            <div key={i}>
+                                <div style={{ fontSize: "14px", fontWeight: 600, color: "#10b981", marginBottom: "4px" }}>
+                                    Slide {isCTA ? "CTA" : slide.slide_number || i + 1}: {slide.title}
+                                </div>
+                                <div style={{ fontSize: "14px", color: "#94a3b8", lineHeight: 1.5 }}>
+                                    {slide.body}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
-            </ResultCard>
+            </div>
         </div>
     );
 }
@@ -666,9 +693,10 @@ const styles: Record<string, React.CSSProperties> = {
     },
     hashtag: {
         fontSize: "13px",
-        color: "#6ee7b7",
-        background: "rgba(16, 185, 129, 0.1)",
-        padding: "4px 10px",
+        color: "#b794f4",
+        background: "rgba(183, 148, 244, 0.15)",
+        border: "1px solid rgba(183, 148, 244, 0.2)",
+        padding: "4px 12px",
         borderRadius: "100px",
     },
     slideNav: {
