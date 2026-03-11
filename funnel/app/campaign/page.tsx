@@ -474,7 +474,9 @@ function DashboardInner() {
                                                     📝 Canonical Post
                                                 </div>
                                                 <p style={{ color: "var(--text-primary)", fontSize: "14px", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-                                                    {selectedDayContent.canonical_post}
+                                                    {typeof selectedDayContent.canonical_post === 'string'
+                                                        ? selectedDayContent.canonical_post
+                                                        : (selectedDayContent.canonical_post as any).body || (selectedDayContent.canonical_post as any).value || JSON.stringify(selectedDayContent.canonical_post)}
                                                 </p>
                                             </div>
                                         )}

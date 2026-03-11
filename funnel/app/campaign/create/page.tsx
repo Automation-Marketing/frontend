@@ -3,7 +3,6 @@
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
-const TONES = ["Professional", "Casual", "Bold", "Witty", "Inspirational"];
 const BACKEND_URL = "http://localhost:8000";
 
 const TEMPLATE_TYPES = [
@@ -81,7 +80,8 @@ function CampaignCreateInner() {
     const [form, setForm] = useState({
         product_service: "",
         icp: "",
-        tone: "Professional",
+        tone: "",
+        caption_size: "average",
         description: "",
         content_types: [] as string[],
         template_type: "problem_solution",
@@ -125,6 +125,7 @@ function CampaignCreateInner() {
                     product_service: form.product_service,
                     icp: form.icp,
                     tone: form.tone,
+                    caption_size: form.caption_size,
                     description: form.description,
                     content_types: form.content_types,
                     template_type: form.template_type,
@@ -268,15 +269,30 @@ function CampaignCreateInner() {
                                 {/* Tone */}
                                 <div>
                                     <label className="field-label">Tone</label>
+                                    <input
+                                        className="input-field"
+                                        placeholder="e.g. Professional, Casual, Witty, Inspirational"
+                                        value={form.tone}
+                                        onChange={(e) => setForm({ ...form, tone: e.target.value })}
+                                    />
+                                </div>
+
+                                {/* Caption Size */}
+                                <div>
+                                    <label className="field-label">Caption Size</label>
                                     <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                                        {TONES.map((tone) => (
+                                        {["small", "average"].map((size) => (
                                             <button
-                                                key={tone}
+                                                key={size}
                                                 type="button"
-                                                onClick={() => setForm({ ...form, tone })}
-                                                className={`tone-pill${form.tone === tone ? " active" : ""}`}
+                                                onClick={() => setForm({ ...form, caption_size: size })}
+                                                className={`selection-card${form.caption_size === size ? " selected" : ""}`}
+                                                style={{ flex: 1, padding: "12px", textAlign: "center" }}
                                             >
-                                                {tone}
+                                                <span style={{ fontWeight: 600, fontSize: "14px", textTransform: "capitalize" }}>{size}</span>
+                                                <span style={{ display: "block", fontSize: "11px", opacity: 0.7, marginTop: "4px" }}>
+                                                    {size === "small" ? "~35 words" : "~100 words"}
+                                                </span>
                                             </button>
                                         ))}
                                     </div>
@@ -400,6 +416,10 @@ function CampaignCreateInner() {
                                         <span style={{ fontWeight: 600, marginRight: "8px" }}>Tone:</span>
                                         <span style={{ color: "var(--text-secondary)" }}>{form.tone}</span>
                                     </div>
+                                    <div>
+                                        <span style={{ fontWeight: 600, marginRight: "8px" }}>Caption Size:</span>
+                                        <span style={{ color: "var(--text-secondary)", textTransform: "capitalize" }}>{form.caption_size}</span>
+                                    </div>
                                     {form.description && (
                                         <div>
                                             <span style={{ fontWeight: 600, marginRight: "8px" }}>Description:</span>
@@ -496,7 +516,11 @@ function ResultsView({
                             <img src={`${BACKEND_URL}${result.image_url}`} alt="AI Generated" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         </div>
                     )}
-                    <p style={{ fontSize: "16px", lineHeight: 1.7, color: "#f1f5f9" }}>{result.canonical_post}</p>
+                    <p style={{ fontSize: "16px", lineHeight: 1.7, color: "#f1f5f9", whiteSpace: "pre-wrap" }}>
+                        {typeof result.canonical_post === 'string'
+                            ? result.canonical_post
+                            : (result.canonical_post as any).body || (result.canonical_post as any).value || JSON.stringify(result.canonical_post)}
+                    </p>
                 </ResultCard>
             )}
 
